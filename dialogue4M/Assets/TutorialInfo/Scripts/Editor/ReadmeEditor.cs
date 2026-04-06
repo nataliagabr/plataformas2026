@@ -6,10 +6,12 @@ using System;
 using System.IO;
 using System.Reflection;
 
-[CustomEditor(typeof(Readme))]
-[InitializeOnLoad]
-public class ReadmeEditor : Editor
+namespace TutorialInfo.Scripts.Editor
 {
+    [CustomEditor(typeof(Readme))]
+    [InitializeOnLoad]
+    public class ReadmeEditor : UnityEditor.Editor
+    {
     static string s_ShowedReadmeSessionStateName = "ReadmeEditor.showedReadme";
     
     static string s_ReadmeSourceDirectory = "Assets/TutorialInfo";
@@ -71,7 +73,21 @@ public class ReadmeEditor : Editor
         var assembly = typeof(EditorApplication).Assembly;
         var windowLayoutType = assembly.GetType("UnityEditor.WindowLayout", true);
         var method = windowLayoutType.GetMethod("LoadWindowLayout", BindingFlags.Public | BindingFlags.Static);
-        method.Invoke(null, new object[] { Path.Combine(Application.dataPath, "TutorialInfo/Layout.wlt"), false });
+        if (method != null)
+        {
+            try
+            {
+                method.Invoke(null, new object[] { Path.Combine(Application.dataPath, "TutorialInfo/Layout.wlt"), false });
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning($"Could not load layout: {ex.Message}");
+            }
+        }
+        else
+        {
+            Debug.LogWarning("WindowLayout.LoadWindowLayout method not found via reflection.");
+        }
     }
 
     static Readme SelectReadme()
@@ -81,8 +97,7 @@ public class ReadmeEditor : Editor
         {
             var readmeObject = AssetDatabase.LoadMainAssetAtPath(AssetDatabase.GUIDToAssetPath(ids[0]));
 
-            Selection.objects = new UnityEngine.Object[] { readmeObject };
-
+            Selection.objects = new[] { readmeObject };
             return (Readme)readmeObject;
         }
         else
@@ -240,3 +255,6 @@ public class ReadmeEditor : Editor
         return GUI.Button(position, label, LinkStyle);
     }
 }
+
+}
+
